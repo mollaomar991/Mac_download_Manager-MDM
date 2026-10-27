@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Mac system files
+.DS_Store
+
+# Electron build artifacts (DMG is uploaded to GitHub Releases, not git history)
+release/*.dmg
+release/*.blockmap
+release/*.yml
+release/mac/
+dist/
+
+# Logs and environment
+*.log
+.env
+.env.*
+!.env.example
+
+# Temporary and test artifacts
+coverage/
+test-results/
+.playwright-cli/
