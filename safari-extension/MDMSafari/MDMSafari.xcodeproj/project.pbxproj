@@ -1,0 +1,503 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AA000001 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000101 /* AppDelegate.swift */; };
+		AA000002 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000102 /* SafariWebExtensionHandler.swift */; };
+		AA000010 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = AA000110 /* manifest.json */; };
+		AA000011 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000111 /* background.js */; };
+		AA000012 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000112 /* content.js */; };
+		AA000013 /* hls.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000113 /* hls.js */; };
+		AA000014 /* media-choices.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000114 /* media-choices.js */; };
+		AA000015 /* youtube-media.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000115 /* youtube-media.js */; };
+		AA000016 /* youtube-page.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000116 /* youtube-page.js */; };
+		AA000017 /* youtube-relay.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000117 /* youtube-relay.js */; };
+		AA000018 /* popup.html in Resources */ = {isa = PBXBuildFile; fileRef = AA000118 /* popup.html */; };
+		AA000019 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = AA000119 /* popup.js */; };
+		AA000020 /* popup.css in Resources */ = {isa = PBXBuildFile; fileRef = AA000120 /* popup.css */; };
+		AA000021 /* icons in Resources */ = {isa = PBXBuildFile; fileRef = AA000121 /* icons */; };
+		AA000030 /* Extension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = AA000200 /* Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AA000040 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA000300 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA000400;
+			remoteInfo = Extension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA000050 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA000030 /* Extension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AA000100 /* MDMSafari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MDMSafari.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000101 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		AA000102 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		AA000103 /* Info.plist (App) */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA000104 /* Info.plist (Ext) */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "../Extension/Info.plist"; sourceTree = "<group>"; };
+		AA000110 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		AA000111 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = background.js; sourceTree = "<group>"; };
+		AA000112 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = content.js; sourceTree = "<group>"; };
+		AA000113 /* hls.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = hls.js; sourceTree = "<group>"; };
+		AA000114 /* media-choices.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = media-choices.js; sourceTree = "<group>"; };
+		AA000115 /* youtube-media.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = youtube-media.js; sourceTree = "<group>"; };
+		AA000116 /* youtube-page.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = youtube-page.js; sourceTree = "<group>"; };
+		AA000117 /* youtube-relay.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = youtube-relay.js; sourceTree = "<group>"; };
+		AA000118 /* popup.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = popup.html; sourceTree = "<group>"; };
+		AA000119 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = popup.js; sourceTree = "<group>"; };
+		AA000120 /* popup.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = popup.css; sourceTree = "<group>"; };
+		AA000121 /* icons */ = {isa = PBXFileReference; lastKnownFileType = folder; path = icons; sourceTree = "<group>"; };
+		AA000200 /* Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Extension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AA000500 /* Frameworks (App) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000501 /* Frameworks (Ext) */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AA000600 /* root */ = {
+			isa = PBXGroup;
+			children = (
+				AA000601 /* MDMSafari */,
+				AA000602 /* Extension */,
+				AA000603 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AA000601 /* MDMSafari */ = {
+			isa = PBXGroup;
+			children = (
+				AA000101 /* AppDelegate.swift */,
+				AA000103 /* Info.plist (App) */,
+			);
+			path = MDMSafari;
+			sourceTree = "<group>";
+		};
+		AA000602 /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				AA000102 /* SafariWebExtensionHandler.swift */,
+				AA000104 /* Info.plist (Ext) */,
+				AA000610 /* Resources */,
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		AA000610 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				AA000110 /* manifest.json */,
+				AA000111 /* background.js */,
+				AA000112 /* content.js */,
+				AA000113 /* hls.js */,
+				AA000114 /* media-choices.js */,
+				AA000115 /* youtube-media.js */,
+				AA000116 /* youtube-page.js */,
+				AA000117 /* youtube-relay.js */,
+				AA000118 /* popup.html */,
+				AA000119 /* popup.js */,
+				AA000120 /* popup.css */,
+				AA000121 /* icons */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		AA000603 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AA000100 /* MDMSafari.app */,
+				AA000200 /* Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AA000700 /* MDMSafari */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA000800;
+			buildPhases = (
+				AA000710 /* Sources */,
+				AA000500 /* Frameworks */,
+				AA000720 /* Resources */,
+				AA000050 /* Embed App Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AA000730 /* PBXTargetDependency */,
+			);
+			name = MDMSafari;
+			productName = MDMSafari;
+			productReference = AA000100 /* MDMSafari.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AA000400 /* Extension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA000801;
+			buildPhases = (
+				AA000711 /* Sources */,
+				AA000501 /* Frameworks */,
+				AA000721 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Extension;
+			productName = Extension;
+			productReference = AA000200 /* Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AA000300 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1430;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					AA000400 = {
+						CreatedOnToolsVersion = 14.3;
+					};
+					AA000700 = {
+						CreatedOnToolsVersion = 14.3;
+					};
+				};
+			};
+			buildConfigurationList = AA000802;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AA000600;
+			productRefGroup = AA000603 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AA000700 /* MDMSafari */,
+				AA000400 /* Extension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AA000720 /* Resources (App) */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000721 /* Resources (Ext) */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000010 /* manifest.json in Resources */,
+				AA000011 /* background.js in Resources */,
+				AA000012 /* content.js in Resources */,
+				AA000013 /* hls.js in Resources */,
+				AA000014 /* media-choices.js in Resources */,
+				AA000015 /* youtube-media.js in Resources */,
+				AA000016 /* youtube-page.js in Resources */,
+				AA000017 /* youtube-relay.js in Resources */,
+				AA000018 /* popup.html in Resources */,
+				AA000019 /* popup.js in Resources */,
+				AA000020 /* popup.css in Resources */,
+				AA000021 /* icons in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AA000710 /* Sources (App) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000001 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA000711 /* Sources (Ext) */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA000002 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AA000730 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA000400 /* Extension */;
+			targetProxy = AA000040 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AA000900 /* Debug (App) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MDMSafari/MDMSafari.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MDMSafari/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "0.1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mdm.downloader.safari";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AA000901 /* Release (App) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = MDMSafari/MDMSafari.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "MDMSafari/Info.plist";
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "0.1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mdm.downloader.safari";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AA000910 /* Debug (Ext) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extension/Extension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extension/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "0.1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mdm.downloader.safari.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AA000911 /* Release (Ext) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Extension/Extension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Extension/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = "0.1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.mdm.downloader.safari.Extension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		AA000920 /* Debug (Project) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA000921 /* Release (Project) */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AA000800 /* Build configuration list for PBXNativeTarget "MDMSafari" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000900 /* Debug */,
+				AA000901 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA000801 /* Build configuration list for PBXNativeTarget "Extension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000910 /* Debug */,
+				AA000911 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA000802 /* Build configuration list for PBXProject "MDMSafari" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA000920 /* Debug */,
+				AA000921 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = AA000300 /* Project object */;
+}
