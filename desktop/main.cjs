@@ -1,0 +1,208 @@
+const path = require('node:path');
+const {showProgress,closeCancelledProgress}=require('./progress-window.cjs');
+
+if (process.argv.includes('--native-host')) {
+  require('../integration/native-host.cjs').runNativeHost();
+} else {
+  const { app, BrowserWindow, ipcMain, dialog, shell, clipboard, Tray, Menu, nativeImage, Notification } = require('electron');
+  app.setName('MDM');
+  const sharedDataDirectory = path.join(app.getPath('home'), '.mdm');
+  require('node:fs').mkdirSync(sharedDataDirectory, {recursive:true});
+  app.setPath('userData', sharedDataDirectory);
+  const locked = app.requestSingleInstanceLock();
+  let window, engine, bridge, tray, quitting = false;
+  const progressWindows = new Map();
+  const progressWindowSizes = new WeakMap();
+  if (!locked) app.quit();
+  else {
+    app.on('second-instance', () => { window?.show(); window?.focus(); });
+    app.whenReady().then(async () => {
+      const fs = require('node:fs/promises');
+      const history = path.join(sharedDataDirectory, 'downloads.json');
+      try {
+        await fs.copyFile(path.join(app.getPath('home'), '.mdm', 'downloads.json'), history, require('node:fs').constants.COPYFILE_EXCL);
+      } catch (error) { if (!['ENOENT','EEXIST'].includes(error.code)) throw error; }
+      const { DownloadEngine } = await import('../core/engine.mjs');
+      const { startBridge } = await import('../core/bridge.mjs');
+      engine = await new DownloadEngine({ dataDirectory: app.getPath('userData'), downloadDirectory: app.getPath('downloads') }).init();
+      let desktopReady;
+      const readyForDownloads = new Promise(resolve => { desktopReady = resolve; });
+      try { bridge = await startBridge(engine, { dataDirectory: app.getPath('userData'), onDownload: async payload => {
+        await readyForDownloads;
+        const reviewOnly = payload.startNow !== true && engine.settings.confirmBrowserDownloads;
+        const ids = await engine.add({ ...payload, reviewOnly, reuseActive:true });
+        const needsReview=engine.downloads.find(d=>d.id===ids[0])?.needsReview;
+        if (!needsReview) await handlers.openProgress({id:ids[0]});
+        if (needsReview && window && !window.isDestroyed()) {
+          showProgress(window);
+          window.webContents.send('downloader:command', { command: 'reviewDownload', id: ids[0] });
+        }
+        return ids;
+      } }); }
+      catch (error) { dialog.showErrorBox('Browser connection unavailable', error.message); }
+      const root = path.join(__dirname, '..');
+      const appIconPath = path.join(root, 'assets', 'app-icon.png');
+      let integrationRoot = root;
+      if (app.isPackaged) {
+        const fs = require('node:fs/promises');
+        integrationRoot = path.join(sharedDataDirectory, 'BrowserIntegration');
+        await fs.mkdir(integrationRoot, { recursive: true });
+        // Extensions must be real files on disk, not paths inside the application's ASAR.
+        await fs.cp(path.join(process.resourcesPath, 'browser', 'extension'), path.join(integrationRoot, 'extension'), { recursive: true });
+        await fs.cp(path.join(process.resourcesPath, 'browser', 'integration'), path.join(integrationRoot, 'integration'), {
+          recursive: true,
+          filter: require('./resource-copy.cjs').copyIfChanged
+        });
+        // Create macOS shell script for native host
+        const shellScript = `#!/bin/bash\nexport ELECTRON_RUN_AS_NODE=1\nexec "${app.getPath('exe')}" "$(dirname "$0")/native-host.cjs"\n`;
+        await fs.writeFile(path.join(integrationRoot, 'integration', 'native-host.sh'), shellScript, { mode: 0o755 });
+      }
+      // Use the bundled runtime even in development; browsers need not inherit Node's PATH.
+      if (!app.isPackaged) {
+        const fs = require('node:fs/promises');
+        const shellScript = `#!/bin/bash\nexport ELECTRON_RUN_AS_NODE=1\nexec "${app.getPath('exe')}" "$(dirname "$0")/native-host.cjs"\n`;
+        await fs.writeFile(path.join(integrationRoot, 'integration', 'native-host.sh'), shellScript, { mode: 0o755 });
+      }
+      let connectedBrowsers = [], connectionError = '';
+      await require('./browser-registration.cjs').prepareNativeHost(integrationRoot, app.getPath('exe'));
+      await require('node:fs/promises').writeFile(path.join(integrationRoot, 'integration', 'desktop-launch.json'), JSON.stringify({executable:app.getPath('exe'),args:app.isPackaged ? [] : [root]}));
+      const connectBrowsers = async () => {
+        try { connectedBrowsers = await require('./browser-registration.cjs').connectInstalledBrowsers({ dataDirectory: app.getPath('userData'), integrationRoot }); connectionError = ''; }
+        catch (error) { connectionError = error.message; }
+      };
+      await connectBrowsers();
+      const browserScan = setInterval(connectBrowsers, 15000);
+      browserScan.unref();
+      const integration = async () => { await connectBrowsers(); return integrationInfo(); };
+      const integrationInfo = () => ({ port: bridge?.port || null, connectedBrowsers, connectionError, extensionPath: path.join(integrationRoot, 'extension'), integrationPath: path.join(integrationRoot, 'integration'), packaged: app.isPackaged, executable: app.getPath('exe') });
+      const snapshot = () => ({ ...engine.snapshot(), integration: integrationInfo() });
+      const handlers = {
+        snapshot,
+        openProgress: async ({id}) => {
+          const d=engine.downloads.find(d=>d.id===id); if(!d)throw new Error('Download not found.');
+          if(progressWindows.has(id)){showProgress(progressWindows.get(id));return;}
+          const progress=new BrowserWindow({width:565,height:485,minWidth:540,minHeight:440,title:d.filename,icon:appIconPath,backgroundColor:'#f0f0f0',autoHideMenuBar:true,webPreferences:{preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
+          progress.setMenu(null);progressWindows.set(id,progress);progressWindowSizes.set(progress,{expanded:{width:565,height:485}});
+          if(d.status==='complete'){progress.setMinimumSize(470,270);progress.setSize(480,280);progress.setTitle('Download complete');}
+          progress.on('closed',()=>progressWindows.delete(id));
+          progress.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+          progress.webContents.on('will-navigate',event=>event.preventDefault());
+          await progress.loadFile(path.join(root,'renderer','index.html'),{query:{progress:id}});
+          showProgress(progress);
+        },
+        add: data => engine.add(data),
+        review: data => engine.reviewDownload(data),
+        action: async ({ id, action }) => {
+          const d = engine.downloads.find(d => d.id === id);
+          if (!d) throw new Error('Download not found.');
+          if (action === 'open') {
+            if (d.status !== 'complete' || !d.path) throw new Error('This download has not finished.');
+            // Opening a potentially executable file always requires an explicit user action.
+            const result = await shell.openPath(d.path); if (result) throw new Error(result);
+          } else if (action === 'openWith') {
+            if (d.status !== 'complete' || !d.path) throw new Error('This download has not finished.');
+            // macOS: use "open -a" or "open --ask" to let the user choose an application
+            await new Promise((resolve, reject) => {
+              require('node:child_process').execFile('/usr/bin/open', ['-R', d.path], error => error ? reject(error) : resolve());
+            });
+          } else if (action === 'reveal') { if (d.path) shell.showItemInFolder(d.path); else await shell.openPath(d.directory); }
+          else return engine.action(id, action);
+        },
+        settings: data => engine.updateSettings(data),
+        chooseDirectory: async () => {
+          const result = await dialog.showOpenDialog(window, { properties: ['openDirectory', 'createDirectory'] });
+          return result.canceled ? null : result.filePaths[0];
+        },
+        clipboard: () => clipboard.readText(),
+        integration
+      };
+      handlers.registerBrowser = data => require('./browser-registration.cjs').registerBrowser(data, { dataDirectory: app.getPath('userData'), integrationRoot });
+      handlers.browserSetup = async ({ action, browser } = {}) => {
+        if (action === 'open') return require('./browser-setup.cjs').openExtensions(browser);
+        if (action === 'copy') { clipboard.writeText(path.join(integrationRoot, 'extension')); return; }
+        if (action === 'folder') {
+          const error = await shell.openPath(path.join(integrationRoot, 'extension'));
+          if (error) throw new Error(error);
+          return;
+        }
+        throw new Error('Unknown browser setup action.');
+      };
+      for (const [name, handler] of Object.entries(handlers)) ipcMain.handle(`downloader:${name}`, (event, data) => {
+        if (![window,...progressWindows.values()].some(w=>!w.isDestroyed()&&event.senderFrame===w.webContents.mainFrame)) throw new Error('Untrusted renderer.');
+        return handler(data);
+      });
+      ipcMain.handle('downloader:closeProgress',event=>{for(const progress of progressWindows.values())if(event.senderFrame===progress.webContents.mainFrame){progress.close();break;}});
+      ipcMain.handle('downloader:resizeProgress',(event,{expanded}={})=>{for(const progress of progressWindows.values())if(event.senderFrame===progress.webContents.mainFrame){const remembered=progressWindowSizes.get(progress)||{expanded:{width:565,height:485}},[width,height]=progress.getSize();if(expanded){progress.setMinimumSize(540,440);progress.setSize(Math.max(540,remembered.expanded.width),Math.max(440,remembered.expanded.height),true);}else{if(height>360)remembered.expanded={width,height};progressWindowSizes.set(progress,remembered);progress.setMinimumSize(540,325);progress.setSize(Math.max(540,width),340,true);}return;}});
+      window = new BrowserWindow({ width: 805, height: 465, minWidth: 760, minHeight: 450,
+        title: 'MDM', icon: appIconPath, backgroundColor: '#f0f0f0', autoHideMenuBar: false,
+        webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true } });
+      window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+      window.webContents.on('will-navigate', event => event.preventDefault());
+      await window.loadFile(path.join(root, 'renderer', 'index.html'));
+      desktopReady();
+      const command = name => () => window.webContents.send('downloader:command', name);
+      // macOS application menu
+      Menu.setApplicationMenu(Menu.buildFromTemplate([
+        { role: 'appMenu', submenu: [
+          { label: 'About MDM', click: () => dialog.showMessageBox(window, { title: 'About MDM', message: 'MDM 0.1.0', detail: 'macOS download manager with segmented transfers and browser video capture.' }) },
+          { type: 'separator' },
+          { role: 'hide' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { label: 'Quit MDM', accelerator: 'CmdOrCtrl+Q', click: () => app.quit() }
+        ] },
+        { label: 'Tasks', submenu: [ { label: 'Add new download…', accelerator: 'CmdOrCtrl+N', click: command('add') }, { label: 'Add batch download…', click: command('add') }, { label: 'Add batch download from clipboard', click: command('paste') }, { type: 'separator' },
+          { label: 'Export', submenu: [{ label: 'To text file…', click: async () => {
+            const result = await dialog.showSaveDialog(window, { defaultPath: 'downloads.txt', filters: [{ name: 'URL list', extensions: ['txt'] }] });
+            if (result.canceled) return;
+            try { await require('node:fs/promises').writeFile(result.filePath, engine.downloads.map(d => d.url).join('\n'), 'utf8'); } catch (e) { dialog.showErrorBox('Could not export downloads', e.message); }
+          } }] },
+          { label: 'Import', submenu: [{ label: 'From text file…', click: async () => {
+            const result = await dialog.showOpenDialog(window, { filters: [{ name: 'URL list', extensions: ['txt'] }], properties: ['openFile'] });
+            if (result.canceled) return;
+            try {
+              const fs = require('node:fs/promises');
+              if ((await fs.stat(result.filePaths[0])).size > 2 * 1024 * 1024) throw new Error('URL list must be smaller than 2 MiB.');
+              const urls = (await fs.readFile(result.filePaths[0], 'utf8')).split(/\r?\n/).map(u => u.trim()).filter(Boolean);
+              await engine.add({ urls, queueOnly: true });
+              await dialog.showMessageBox(window, { message: `Imported ${urls.length} downloads.`, detail: 'The imported downloads are paused. Select Start Queue to begin.' });
+            } catch (e) { dialog.showErrorBox('Could not import downloads', e.message); }
+          } }] } ] },
+        { label: 'File', submenu: [ { label: 'Download properties…', click: command('details') }, { label: 'Remove selected', accelerator: 'Backspace', click: command('remove') }, { label: 'Remove completed downloads', click: command('removeCompleted') } ] },
+        { label: 'Downloads', submenu: [ { label: 'Pause all', click: command('pauseAll') }, { label: 'Stop all', click: command('pauseAll') }, { type: 'separator' }, { label: 'Delete all completed', click: command('removeCompleted') }, { type: 'separator' }, { label: 'Find', accelerator: 'CmdOrCtrl+F', click: command('find') }, { type: 'separator' }, { label: 'Scheduler…', click: command('scheduler') }, { label: 'Start queue', click: command('resumeAll') }, { label: 'Stop queue', click: command('pauseAll') }, { label: 'Speed limiter…', click: command('settings') }, { type: 'separator' }, { label: 'Options…', accelerator: 'CmdOrCtrl+,', click: command('settings') } ] },
+        { label: 'View', submenu: [ { label: 'All downloads', click: command('all') }, { role: 'togglefullscreen' }, { type: 'separator' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { role: 'resetZoom' } ] },
+        { role: 'windowMenu' },
+        { label: 'Help', submenu: [ { label: 'Browser integration…', click: command('integration') } ] }
+      ]));
+      engine.on('change', () => {
+        const data=snapshot();
+        if (!window.isDestroyed()) window.webContents.send('downloader:change',data);
+        for(const [id,progress] of progressWindows){
+          const d=data.downloads.find(d=>d.id===id);
+          if(closeCancelledProgress(progress,d))continue;
+          progress.setTitle(d.status==='complete'?'Download complete':`${d.total?Math.floor(d.downloaded/d.total*100)+'% ':''}${d.filename}`);
+          progress.webContents.send('downloader:change',data);
+        }
+      });
+      engine.on('complete', d => {
+        const progress=progressWindows.get(d.id);
+        if(progress&&!progress.isDestroyed()){if(engine.settings.hideCompletionDialog)progress.close();else{progress.setMinimumSize(470,270);progress.setSize(480,280);progress.setTitle('Download complete');}}
+        if (engine.settings.notifyOnComplete && Notification.isSupported()) new Notification({ title: 'Download complete', body: d.filename }).show();
+        if (engine.settings.revealOnComplete && d.path) shell.showItemInFolder(d.path);
+      });
+      const icon = nativeImage.createFromPath(appIconPath).resize({width:16,height:16});
+      tray = new Tray(icon);
+      tray.setToolTip('MDM');
+      tray.setContextMenu(Menu.buildFromTemplate([{ label: 'Show downloads', click: () => window.show() }, { label: 'Quit', click: () => app.quit() }]));
+      tray.on('double-click', () => window.show());
+      window.on('close', event => { if (!quitting) { event.preventDefault(); window.hide(); } });
+      app.on('activate', () => window.show());
+    }).catch(error => { dialog.showErrorBox('MDM could not start', error.stack || error.message); quitting = true; app.quit(); });
+    app.on('before-quit', event => {
+      if (quitting) return;
+      event.preventDefault(); quitting = true;
+      Promise.resolve().then(() => bridge?.close()).then(() => engine?.close()).catch(error => process.stderr.write(`${error.message}\n`)).finally(() => app.quit());
+    });
+  }
+}
