@@ -9,6 +9,7 @@ const requestContext = new Map();
 const youtubePlayers=new Map(), youtubeObserved=new Map(), youtubeSabrObserved=new Map(), youtubeSabrSeed=new Map();
 function clearSabrCapture(tabId){
   youtubeSabrObserved.delete(tabId);
+  try{(api.storage?.session||api.storage?.local)?.remove('sabr_'+tabId).catch(()=>{});}catch{}
   for(const [id,seed] of youtubeSabrSeed)if(seed.tabId===tabId)youtubeSabrSeed.delete(id);
 }
 function bytesBase64(bytes){let binary='';const view=new Uint8Array(bytes);for(let i=0;i<view.length;i+=8192)binary+=String.fromCharCode(...view.subarray(i,i+8192));return btoa(binary);}
@@ -68,12 +69,29 @@ function nativeSend(payload) {
 async function enqueue(item, tabId) {
   let sabr;
   if(item.sabrSelection){
-    const player=youtubePlayers.get(tabId), selection=item.sabrSelection;
+    let player=youtubePlayers.get(tabId);
+    if(!player && tabId){
+      try{
+        const saved=await (api.storage?.session||api.storage?.local)?.get('player_'+tabId);
+        if(saved?.['player_'+tabId])player=saved['player_'+tabId];
+      }catch{}
+      if(!player){
+        await api.tabs.sendMessage(tabId,{action:'refreshPlayer'}).catch(()=>{});
+        player=youtubePlayers.get(tabId);
+      }
+    }
+    const selection=item.sabrSelection;
     const videoItag=selection.videoItag===undefined?undefined:Number(selection.videoItag), audioItag=Number(selection.audioItag);
-    if(!player||!Number.isSafeInteger(audioItag)||audioItag<=0||videoItag!==undefined&&(!Number.isSafeInteger(videoItag)||videoItag<=0))throw new Error('The captured YouTube session expired. Reopen the menu.');
+    if(!player||!Number.isSafeInteger(audioItag)||audioItag<=0||videoItag!==undefined&&(!Number.isSafeInteger(videoItag)||videoItag<=0))throw new Error('The captured YouTube session expired. Play the video briefly and reopen the menu.');
     const audio=player.formats.find(f=>f.itag===audioItag&&/^audio\/mp4/i.test(f.mimeType));
     const video=videoItag===undefined?undefined:player.formats.find(f=>f.itag===videoItag&&/^video\/mp4/i.test(f.mimeType));
-    const captured=youtubeSabrObserved.get(tabId);
+    let captured=youtubeSabrObserved.get(tabId);
+    if(!captured && tabId){
+      try{
+        const saved=await (api.storage?.session||api.storage?.local)?.get('sabr_'+tabId);
+        if(saved?.['sabr_'+tabId])captured=saved['sabr_'+tabId];
+      }catch{}
+    }
     if(!captured)throw new Error('Play this YouTube video briefly so its streaming session can be captured, then try again.');
     const serverAbrStreamingUrl=captured.url;
     if(!audio||videoItag!==undefined&&!video||!globalThis.youtubeMedia.sabrUrl(serverAbrStreamingUrl)||!player.ustreamerConfig)throw new Error('The captured YouTube SABR session is incomplete. Play the video briefly and reopen the menu.');
@@ -122,7 +140,10 @@ api.webRequest.onHeadersReceived.addListener(details => {
   const capturedSabr=globalThis.youtubeMedia?.sabrUrl(details.url);
   if(capturedSabr && details.tabId>=0 && [200,206].includes(details.statusCode)){
     const seed=youtubeSabrSeed.get(details.requestId);
-    if(seed?.tabId===details.tabId&&seed.url===capturedSabr)youtubeSabrObserved.set(details.tabId,seed);
+    if(seed?.tabId===details.tabId&&seed.url===capturedSabr){
+      youtubeSabrObserved.set(details.tabId,seed);
+      try{(api.storage?.session||api.storage?.local)?.set({['sabr_'+details.tabId]:seed}).catch(()=>{});}catch{}
+    }
     youtubeSabrSeed.delete(details.requestId);
     if(youtubeSabrObserved.size>50)youtubeSabrObserved.delete(youtubeSabrObserved.keys().next().value);
   }
@@ -137,8 +158,8 @@ api.webRequest.onHeadersReceived.addListener(details => {
   }
   if(/\.m3u8(?:[?#]|$)/i.test(details.url)||/mpegurl/i.test(mime))discoverHls(details.tabId,details.url);
 }, {urls: ['http://*/*', 'https://*/*']}, ['responseHeaders']);
-api.tabs.onRemoved.addListener(tabId => {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);updateCache(map => { delete map[tabId]; }).catch(() => {});});
-api.tabs.onUpdated.addListener((tabId, change) => { if (change.status === 'loading') {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);updateCache(map => { delete map[tabId]; }).catch(() => {});} });
+api.tabs.onRemoved.addListener(tabId => {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);try{(api.storage?.session||api.storage?.local)?.remove(['player_'+tabId,'sabr_'+tabId]).catch(()=>{});}catch{}updateCache(map => { delete map[tabId]; }).catch(() => {});});
+api.tabs.onUpdated.addListener((tabId, change) => { if (change.status === 'loading') {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);try{(api.storage?.session||api.storage?.local)?.remove(['player_'+tabId,'sabr_'+tabId]).catch(()=>{});}catch{}updateCache(map => { delete map[tabId]; }).catch(() => {});} });
 api.runtime.onInstalled.addListener(async () => {
   try {
     await api.contextMenus.removeAll();
@@ -169,6 +190,7 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
         const previous=youtubePlayers.get(sender.tab.id);
         if(previous&&previous.videoId!==clean.videoId){clearSabrCapture(sender.tab.id);youtubeObserved.delete(sender.tab.id);}
         youtubePlayers.set(sender.tab.id,clean);if(youtubePlayers.size>50)youtubePlayers.delete(youtubePlayers.keys().next().value);
+        try{(api.storage?.session||api.storage?.local)?.set({['player_'+sender.tab.id]:clean}).catch(()=>{});}catch{}
       }
       return {ok:true};
     }
@@ -188,8 +210,21 @@ api.runtime.onMessage.addListener((message, sender, respond) => {
         const id=page.searchParams.get('v')||/^\/shorts\/([\w-]{11})/.exec(page.pathname)?.[1];
         if(!/^[\w-]{11}$/.test(id||''))return {ok:true,items:[]};
         await api.tabs.sendMessage(sender.tab.id,{action:'refreshPlayer'}).catch(()=>{});
-        const player=youtubePlayers.get(sender.tab.id);
-        const active=player?.videoId===id?{...player,sabrUrl:youtubeSabrObserved.get(sender.tab.id)?.url||player.sabrUrl}:null;
+        let player=youtubePlayers.get(sender.tab.id);
+        if(!player){
+          try{
+            const saved=await (api.storage?.session||api.storage?.local)?.get('player_'+sender.tab.id);
+            if(saved?.['player_'+sender.tab.id])player=saved['player_'+sender.tab.id];
+          }catch{}
+        }
+        let captured=youtubeSabrObserved.get(sender.tab.id);
+        if(!captured){
+          try{
+            const saved=await (api.storage?.session||api.storage?.local)?.get('sabr_'+sender.tab.id);
+            if(saved?.['sabr_'+sender.tab.id])captured=saved['sabr_'+sender.tab.id];
+          }catch{}
+        }
+        const active=player?.videoId===id?{...player,sabrUrl:captured?.url||player.sabrUrl}:null;
         const items=active?globalThis.youtubeMedia.choices(active,youtubeObserved.get(sender.tab.id)||[]):[];
         return {ok:true,items,notice:!items.length&&player?.videoId===id&&player.sabr?'This video uses YouTube SABR streaming, which this version cannot download yet. No download has been started.':undefined};
       }

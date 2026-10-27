@@ -98,7 +98,11 @@
     }
     position();
   }
-  function friendlyError(message) { return /native messaging host not found/i.test(message || '') ? 'Chrome cannot find the desktop connector. Open MDM → Browser Integration → Refresh browsers, then reload this extension and page. Details: '+message : message; }
+  function friendlyError(message) {
+    if (/native messaging host not found/i.test(message || '')) return 'Chrome cannot find the desktop connector. Open MDM → Browser Integration → Refresh browsers, then reload this extension and page. Details: '+message;
+    if (/session expired|streaming session can be captured/i.test(message || '')) return 'Play this YouTube video for 2-3 seconds so the video stream is captured, then click download again.';
+    return message;
+  }
   function closeChoosers(except) {
     for(const record of records){
       if(record===except)continue;
