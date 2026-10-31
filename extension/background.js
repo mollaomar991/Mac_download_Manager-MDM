@@ -13,6 +13,30 @@ function clearSabrCapture(tabId){
   for(const [id,seed] of youtubeSabrSeed)if(seed.tabId===tabId)youtubeSabrSeed.delete(id);
 }
 function bytesBase64(bytes){let binary='';const view=new Uint8Array(bytes);for(let i=0;i<view.length;i+=8192)binary+=String.fromCharCode(...view.subarray(i,i+8192));return btoa(binary);}
+// --- requestContext persistence: survives MV3 service-worker restarts ---
+const _rcTimers=new Map();
+function saveRequestContext(tabId){
+  clearTimeout(_rcTimers.get(tabId));
+  _rcTimers.set(tabId,setTimeout(()=>{
+    _rcTimers.delete(tabId);
+    const tab=requestContext.get(tabId);if(!tab)return;
+    const obj=Object.fromEntries(tab);
+    try{(api.storage?.session||api.storage?.local)?.set({['rc_'+tabId]:obj}).catch(()=>{});}catch{}
+  },400));
+}
+async function restoreRequestContext(tabId){
+  if(requestContext.has(tabId))return requestContext.get(tabId);
+  try{
+    const saved=await (api.storage?.session||api.storage?.local)?.get('rc_'+tabId);
+    if(saved?.['rc_'+tabId]&&typeof saved['rc_'+tabId]==='object'&&!Array.isArray(saved['rc_'+tabId])){
+      const tab=new Map(Object.entries(saved['rc_'+tabId]));
+      requestContext.set(tabId,tab);
+      if(requestContext.size>50)requestContext.delete(requestContext.keys().next().value);
+      return tab;
+    }
+  }catch{}
+  return null;
+}
 api.webRequest.onBeforeRequest?.addListener(details=>{
   const url=globalThis.youtubeMedia?.sabrUrl(details.url), raw=details.requestBody?.raw;
   if(!url||details.tabId<0||!Array.isArray(raw)||!raw.length)return;
@@ -31,6 +55,7 @@ function rememberRequest(details) {
     if(['cookie','authorization','user-agent','referer','origin'].includes(name)&&typeof h.value==='string'&&h.value.length<=16384&&!/[\r\n]/.test(h.value))headers[name]=h.value;
   }
   tab.set(details.url,headers);if(tab.size>100)tab.delete(tab.keys().next().value);
+  saveRequestContext(details.tabId);
 }
 api.webRequest.onBeforeSendHeaders?.addListener(rememberRequest,{urls:['http://*/*','https://*/*']},['requestHeaders',...(globalThis.browser?[]:['extraHeaders'])]);
 function httpUrl(value) {
@@ -100,7 +125,19 @@ async function enqueue(item, tabId) {
   const url = httpUrl(sabr?.serverAbrStreamingUrl||item.url);
   if (!url) throw new Error('Only direct HTTP and HTTPS links are supported.');
   if (unsupported(url, item.mime) || item.unsupported) throw new Error(item.reason || 'DASH streams are unsupported.');
-  const requestHeaders=requestContext.get(tabId)?.get(url);
+  let requestHeaders=requestContext.get(tabId)?.get(url);
+  // Restore captured headers from storage if service worker was restarted
+  if(!requestHeaders&&tabId>0){
+    const restoredTab=await restoreRequestContext(tabId);
+    requestHeaders=restoredTab?.get(url);
+    // Fallback: find any headers from the same origin (handles URL expiry / param changes)
+    if(!requestHeaders&&restoredTab){
+      try{
+        const origin=new URL(url).origin;
+        for(const[k,v]of restoredTab){if(new URL(k).origin===origin){requestHeaders=v;break;}}
+      }catch{}
+    }
+  }
   return nativeSend({action: 'download', url, youtubeFormat:item.youtubeFormat, sabr, startNow:item.startNow===true, audioUrl:httpUrl(item.audioUrl)||undefined, outputFormat:item.outputFormat, filename: item.filename, referer: httpUrl(requestHeaders?.referer || item.referer) || undefined,requestHeaders});
 }
 function updateCache(change) {
@@ -158,8 +195,8 @@ api.webRequest.onHeadersReceived.addListener(details => {
   }
   if(/\.m3u8(?:[?#]|$)/i.test(details.url)||/mpegurl/i.test(mime))discoverHls(details.tabId,details.url);
 }, {urls: ['http://*/*', 'https://*/*']}, ['responseHeaders']);
-api.tabs.onRemoved.addListener(tabId => {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);try{(api.storage?.session||api.storage?.local)?.remove(['player_'+tabId,'sabr_'+tabId]).catch(()=>{});}catch{}updateCache(map => { delete map[tabId]; }).catch(() => {});});
-api.tabs.onUpdated.addListener((tabId, change) => { if (change.status === 'loading') {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);try{(api.storage?.session||api.storage?.local)?.remove(['player_'+tabId,'sabr_'+tabId]).catch(()=>{});}catch{}updateCache(map => { delete map[tabId]; }).catch(() => {});} });
+api.tabs.onRemoved.addListener(tabId => {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);clearTimeout(_rcTimers.get(tabId));_rcTimers.delete(tabId);try{(api.storage?.session||api.storage?.local)?.remove(['player_'+tabId,'sabr_'+tabId,'rc_'+tabId]).catch(()=>{});}catch{}updateCache(map => { delete map[tabId]; }).catch(() => {});});
+api.tabs.onUpdated.addListener((tabId, change) => { if (change.status === 'loading') {youtubePlayers.delete(tabId);youtubeObserved.delete(tabId);clearSabrCapture(tabId);requestContext.delete(tabId);hlsSeen.delete(tabId);clearTimeout(_rcTimers.get(tabId));_rcTimers.delete(tabId);try{(api.storage?.session||api.storage?.local)?.remove(['player_'+tabId,'sabr_'+tabId,'rc_'+tabId]).catch(()=>{});}catch{}updateCache(map => { delete map[tabId]; }).catch(() => {});} });
 api.runtime.onInstalled.addListener(async () => {
   try {
     await api.contextMenus.removeAll();
